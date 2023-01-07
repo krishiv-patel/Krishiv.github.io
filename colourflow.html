@@ -1,0 +1,509 @@
+<html data-wf-page="5d36b3dbce08633264479505" data-wf-site="5c3a6378e76e088403f168d4"
+    class="w-mod-js w-mod-ix wf-spacemono-n4-active wf-opensans-n8-active wf-opensans-n7-active wf-opensans-n4-active wf-opensans-n6-active wf-opensans-n3-active wf-opensans-i6-active wf-opensans-i8-active wf-opensans-i4-active wf-opensans-i7-active wf-opensans-i3-active wf-spacemono-i4-active wf-spacemono-n7-active wf-spacemono-i7-active wf-karla-n4-active wf-karla-n7-active wf-karla-i4-active wf-karla-i7-active wf-frankruhllibre-n5-active wf-frankruhllibre-n9-active wf-frankruhllibre-n3-active wf-frankruhllibre-n7-active wf-frankruhllibre-n4-active wf-playfairdisplay-n7-active wf-playfairdisplay-n4-active wf-playfairdisplay-n9-active wf-playfairdisplay-i9-active wf-playfairdisplay-i7-active wf-playfairdisplay-i4-active wf-lora-n4-active wf-lora-n7-active wf-lora-i4-active wf-lora-i7-active wf-active">
+<script type="text/javascript" async=""
+    src="https://www.gstatic.com/recaptcha/releases/5qcenVbrhOy8zihcc2aHOWD4/recaptcha__en_gb.js"
+    crossorigin="anonymous"
+    integrity="sha384-7rScIgrYIGXM2zfA5rvUEHj5wds8HEmDWAIFBtxAIRUd4WM35/kAEF52tbgZmP7/"></script>
+<script>
+    window[Symbol.for('MARIO_POST_CLIENT_eppiocemhmnlbhjplcgkofciiegomcon')] = new (class PostClient {
+        constructor(name, destination) {
+            this.name = name;
+            this.destination = destination;
+            this.serverListeners = {};
+            this.bgRequestsListeners = {};
+            this.bgEventsListeners = {};
+            window.addEventListener('message', (message) => {
+                const data = message.data;
+                const isNotForMe = !(data.destination && data.destination === this.name);
+                const hasNotEventProp = !data.event;
+                if (isNotForMe || hasNotEventProp) {
+                    return;
+                }
+                if (data.event === 'MARIO_POST_SERVER__BG_RESPONSE') {
+                    const response = data.args;
+                    if (this.hasBgRequestListener(response.requestId)) {
+                        try {
+                            this.bgRequestsListeners[response.requestId](response.response);
+                        }
+                        catch (e) {
+                            console.log(e);
+                        }
+                        delete this.bgRequestsListeners[response.requestId];
+                    }
+                }
+                else if (data.event === 'MARIO_POST_SERVER__BG_EVENT') {
+                    const response = data.args;
+                    if (this.hasBgEventListener(response.event)) {
+                        try {
+                            this.bgEventsListeners[data.id](response.payload);
+                        }
+                        catch (e) {
+                            console.log(e);
+                        }
+                    }
+                }
+                else if (this.hasServerListener(data.event)) {
+                    try {
+                        this.serverListeners[data.event](data.args);
+                    }
+                    catch (e) {
+                        console.log(e);
+                    }
+                }
+                else {
+                    console.log(`event not handled: ${data.event}`);
+                }
+            });
+        }
+        emitToServer(event, args) {
+            const id = this.generateUIID();
+            const message = {
+                args,
+                destination: this.destination,
+                event,
+                id,
+            };
+            window.postMessage(message, location.origin);
+            return id;
+        }
+        emitToBg(bgEventName, args) {
+            const requestId = this.generateUIID();
+            const request = { bgEventName, requestId, args };
+            this.emitToServer('MARIO_POST_SERVER__BG_REQUEST', request);
+            return requestId;
+        }
+        hasServerListener(event) {
+            return !!this.serverListeners[event];
+        }
+        hasBgRequestListener(requestId) {
+            return !!this.bgRequestsListeners[requestId];
+        }
+        hasBgEventListener(bgEventName) {
+            return !!this.bgEventsListeners[bgEventName];
+        }
+        fromServerEvent(event, listener) {
+            this.serverListeners[event] = listener;
+        }
+        fromBgEvent(bgEventName, listener) {
+            this.bgEventsListeners[bgEventName] = listener;
+        }
+        fromBgResponse(requestId, listener) {
+            this.bgRequestsListeners[requestId] = listener;
+        }
+        generateUIID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+    })('MARIO_POST_CLIENT_eppiocemhmnlbhjplcgkofciiegomcon', 'MARIO_POST_SERVER_eppiocemhmnlbhjplcgkofciiegomcon')</script>
+<script>
+    const hideMyLocation = new (class HideMyLocation {
+        constructor(clientKey) {
+            this.clientKey = clientKey;
+            this.watchIDs = {};
+            this.client = window[Symbol.for(clientKey)];
+            const getCurrentPosition = navigator.geolocation.getCurrentPosition;
+            const watchPosition = navigator.geolocation.watchPosition;
+            const clearWatch = navigator.geolocation.clearWatch;
+            const self = this;
+            navigator.geolocation.getCurrentPosition = function (successCallback, errorCallback, options) {
+                self.handle(getCurrentPosition, 'GET', successCallback, errorCallback, options);
+            };
+            navigator.geolocation.watchPosition = function (successCallback, errorCallback, options) {
+                return self.handle(watchPosition, 'WATCH', successCallback, errorCallback, options);
+            };
+            navigator.geolocation.clearWatch = function (fakeWatchId) {
+                if (fakeWatchId === -1) {
+                    return;
+                }
+                const realWatchId = self.watchIDs[fakeWatchId];
+                delete self.watchIDs[fakeWatchId];
+                return clearWatch.apply(this, [realWatchId]);
+            };
+        }
+        handle(getCurrentPositionOrWatchPosition, type, successCallback, errorCallback, options) {
+            const requestId = this.client.emitToBg('HIDE_MY_LOCATION__GET_LOCATION');
+            let fakeWatchId = this.getRandomInt(0, 100000);
+            this.client.fromBgResponse(requestId, (response) => {
+                if (response.enabled) {
+                    if (response.status === 'SUCCESS') {
+                        const position = this.map(response);
+                        successCallback(position);
+                    }
+                    else {
+                        const error = this.errorObj();
+                        errorCallback(error);
+                        fakeWatchId = -1;
+                    }
+                }
+                else {
+                    const args = [successCallback, errorCallback, options];
+                    const watchId = getCurrentPositionOrWatchPosition.apply(navigator.geolocation, args);
+                    if (type === 'WATCH') {
+                        this.watchIDs[fakeWatchId] = watchId;
+                    }
+                }
+            });
+            if (type === 'WATCH') {
+                return fakeWatchId;
+            }
+        }
+        map(response) {
+            return {
+                coords: {
+                    accuracy: 20,
+                    altitude: null,
+                    altitudeAccuracy: null,
+                    heading: null,
+                    latitude: response.latitude,
+                    longitude: response.longitude,
+                    speed: null,
+                },
+                timestamp: Date.now(),
+            };
+        }
+        errorObj() {
+            return {
+                code: 1,
+                message: 'User denied Geolocation',
+            };
+        }
+        getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+    })('MARIO_POST_CLIENT_eppiocemhmnlbhjplcgkofciiegomcon')
+</script>
+<script type="text/javascript">function __fiddlerJamStart() {
+        window.postMessage({ command: 'startFromSDK', data: null, fromSDK: true }, "*");
+    };
+
+    window.addEventListener("message", (event) => {
+        if (event.data.fromBackground && event.data.command == 'shareCompletedSDK') {
+            // get the url
+            window.__pageFiddlerJamSDKData = event.data.data;
+            return;
+        }
+    })
+
+    function __fiddlerJamStop(debugMode = false) {
+        window.__pageFiddlerJamSDKData = null;
+        window.postMessage({ command: 'stopFromSDK', data: debugMode, fromSDK: true }, "*");
+        return new Promise((resolve, reject) => {
+            const intervalId = setInterval(() => {
+                if (window.__pageFiddlerJamSDKData) {
+                    clearInterval(intervalId);
+                    resolve(window.__pageFiddlerJamSDKData);
+                }
+            });
+        })
+    };</script>
+
+<head>
+    <style>
+        .wf-force-outline-none[tabindex="-1"]:focus {
+            outline: none;
+        }
+    </style>
+    <meta charset="utf-8">
+    <title>Colourscope</title>
+    <meta content="Colourscope" property="og:title">
+    <meta content="Colourscope" property="twitter:title">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <link href="color.css" rel="stylesheet" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" type="text/javascript"></script>
+    <script>(function inject(config) {
+            function GenerateQuickId() {
+                var randomStrId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                return randomStrId.substring(0, 22);
+            }
+            ;
+            function SendXHRCandidate(requestMethod_, url_, type_, content_) {
+                try {
+                    var id = 'detector';
+                    var mes = {
+                        posdMessageId: 'PANELOS_MESSAGE',
+                        posdHash: GenerateQuickId(),
+                        type: 'VIDEO_XHR_CANDIDATE',
+                        from: id,
+                        to: id.substring(0, id.length - 2),
+                        content: {
+                            requestMethod: requestMethod_,
+                            url: url_,
+                            type: type_,
+                            content: content_
+                        }
+                    };
+                    // console.log(`posd_log: ${new Date().toLocaleString()} DEBUG [${this.id}] : (PosdVideoTrafficDetector) sending`, mes);
+                    window.postMessage(mes);
+                } catch (e) { }
+            }
+            ;
+            var open = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function () {
+                this.requestMethod = arguments[0];
+                open.apply(this, arguments);
+            };
+            var send = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.send = function () {
+                var onreadystatechange = this.onreadystatechange;
+                this.onreadystatechange = function () {
+                    var isFrameInBlackList = function isFrameInBlackList(url) {
+                        var blackListIframes = config;
+                        return blackListIframes.some(function (e) {
+                            return url.includes(e);
+                        });
+                    };
+                    if (this.readyState === 4 && !isFrameInBlackList(this.responseURL)) {
+                        setTimeout(SendXHRCandidate(this.requestMethod, this.responseURL, this.getResponseHeader('content-type'), this.response), 0);
+                    }
+                    if (onreadystatechange) {
+                        return onreadystatechange.apply(this, arguments);
+                    }
+                };
+                return send.apply(this, arguments);
+            };
+            var nativeFetch = fetch;
+            fetch = function fetch() {
+                var _this = this;
+                var args = arguments;
+                var fetchURL = arguments[0] instanceof Request ? arguments[0].url : arguments[0];
+                var fetchMethod = arguments[0] instanceof Request ? arguments[0].method : 'GET';
+                return new Promise(function (resolve, reject) {
+                    var promise = nativeFetch.apply(_this, args);
+                    promise.then(function (response) {
+                        if (response.body instanceof ReadableStream) {
+                            var nativeJson = response.json;
+                            response.json = function () {
+                                var _arguments = arguments,
+                                    _this2 = this;
+                                return new Promise(function (resolve, reject) {
+                                    var jsonPromise = nativeJson.apply(_this2, _arguments);
+                                    jsonPromise.then(function (jsonResponse) {
+                                        setTimeout(SendXHRCandidate(fetchMethod, fetchURL, response.headers.get('content-type'), JSON.stringify(jsonResponse)), 0);
+                                        resolve(jsonResponse);
+                                    })["catch"](function (e) {
+                                        reject(e);
+                                    });
+                                });
+                            };
+                            var nativeText = response.text;
+                            response.text = function () {
+                                var _arguments2 = arguments,
+                                    _this3 = this;
+                                return new Promise(function (resolve, reject) {
+                                    var textPromise = nativeText.apply(_this3, _arguments2);
+                                    textPromise.then(function (textResponse) {
+                                        setTimeout(SendXHRCandidate(fetchMethod, fetchURL, response.headers.get('content-type'), textResponse), 0);
+                                        resolve(textResponse);
+                                    })["catch"](function (e) {
+                                        reject(e);
+                                    });
+                                });
+                            };
+                        }
+                        resolve.apply(this, arguments);
+                    })["catch"](function () {
+                        reject.apply(this, arguments);
+                    });
+                });
+            };
+        })(["facebook.com/", "twitter.com/", "youtube-nocookie.com/embed/", "//vk.com/", "//www.vk.com/", "//linkedin.com/", "//www.linkedin.com/", "//instagram.com/", "//www.instagram.com/", "//www.google.com/recaptcha/api2/", "//hangouts.google.com/webchat/", "//www.google.com/calendar/", "//www.google.com/maps/embed", "spotify.com/", "soundcloud.com/", "//player.vimeo.com/", "//disqus.com/", "//tgwidget.com/", "//js.driftt.com/", "friends2follow.com", "/widget", "login", "//video.bigmir.net/", "blogger.com", "//smartlock.google.com/", "//keep.google.com/", "/web.tolstoycomments.com/", "moz-extension://", "chrome-extension://", "/auth/", "//analytics.google.com/", "adclarity.com", "paddle.com/checkout", "hcaptcha.com", "recaptcha.net", "2captcha.com", "accounts.google.com", "www.google.com/shopping/customerreviews", "buy.tinypass.com"]);</script>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic,700,700italic,800,800italic%7CSpace+Mono:regular,italic,700,700italic%7CKarla:regular,italic,700,700italic%7CFrank+Ruhl+Libre:300,regular,500,700,900%7CPlayfair+Display:regular,italic,700,700italic,900,900italic%7CLora:regular,italic,700,700italic"
+        media="all">
+    <script
+        type="text/javascript">WebFont.load({ google: { families: ["Open Sans:300,300italic,400,400italic,600,600italic,700,700italic,800,800italic", "Space Mono:regular,italic,700,700italic", "Karla:regular,italic,700,700italic", "Frank Ruhl Libre:300,regular,500,700,900", "Playfair Display:regular,italic,700,700italic,900,900italic", "Lora:regular,italic,700,700italic"] } });</script>
+    <!--[if lt IE 9]><script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript"></script><![endif]-->
+    <script
+        type="text/javascript">!function (o, c) { var n = c.documentElement, t = " w-mod-"; n.className += t + "js", ("ontouchstart" in o || o.DocumentTouch && c instanceof DocumentTouch) && (n.className += t + "touch") }(window, document);</script>
+    <link href="https://uploads-ssl.webflow.com/5c3a6378e76e088403f168d4/5c83b9cfaf626269aa103194_fav-icon-slant.png"
+        rel="shortcut icon" type="image/x-icon">
+    <link href="https://uploads-ssl.webflow.com/5c3a6378e76e088403f168d4/5c810d79f2a0f7bd3837a0e1_web-clip.png"
+        rel="apple-touch-icon">
+    <script async="" src="https://www.googletagmanager.com/gtag/js?id=UA-38766451-2"></script>
+    <script
+        type="text/javascript">window.dataLayer = window.dataLayer || []; function gtag() { dataLayer.push(arguments); } gtag('js', new Date()); gtag('config', 'UA-38766451-2', { 'anonymize_ip': false });</script>
+    <script src="https://www.google.com/recaptcha/api.js" type="text/javascript"></script>
+    <style>
+        .heading-3 {
+            word -break: break-word;
+            -webkit-hyphens: auto;
+            -moz-hyphens: auto;
+            -ms-hyphens: auto;
+            hyphens: auto;
+        }
+
+        .c-intro--projects {
+            word -break: break-word;
+            -webkit-hyphens: auto;
+            -moz-hyphens: auto;
+            -ms-hyphens: auto;
+            hyphens: auto;
+        }
+
+
+
+
+        ::selection {
+
+            background: #FFFFFF;
+            /* WebKit/Blink Browsers */
+
+            color: #000000;
+
+        }
+
+        ::-moz-selection {
+
+            background: #AB87FF;
+            /* Gecko Browsers */
+
+        }
+    </style>
+
+
+    <meta name="theme-color" content="#4D28A9">
+    <style type="text/css">
+        @font-face {
+            font - family: Roboto;
+            src: url("chrome-extension://mcgbeeipkmelnpldkobichboakdfaeon/css/Roboto-Regular.ttf");
+        }
+    </style>
+    <style>
+        .flipX video::-webkit-media-text-track-display {
+            transform: matrix(-1, 0, 0, 1, 0, 0) !important;
+        }
+
+        .flipXY video::-webkit-media-text-track-display {
+            transform: matrix(-1, 0, 0, -1, 0, 0) !important;
+        }
+
+        .flipXYX video::-webkit-media-text-track-display {
+            transform: matrix(1, 0, 0, -1, 0, 0) !important;
+        }
+    </style>
+    <style>
+        @keyframes blinkWarning {
+            0 % {
+                color: red;
+            }
+
+            100% {
+                color: white;
+            }
+        }
+
+        @-webkit-keyframes blinkWarning {
+            0 % {
+                color: red;
+            }
+
+            100% {
+                color: white;
+            }
+        }
+
+        .blinkWarning {
+            -webkit - animation: blinkWarning 1s linear infinite;
+            -moz-animation: blinkWarning 1s linear infinite;
+            animation: blinkWarning 1s linear infinite;
+        }
+    </style>
+</head>
+
+<body class="body-colourscope"
+    bis_register="W3sibWFzdGVyIjp0cnVlLCJleHRlbnNpb25JZCI6ImVwcGlvY2VtaG1ubGJoanBsY2drb2ZjaWllZ29tY29uIiwiYWRibG9ja2VyU3RhdHVzIjp7IkRJU1BMQVkiOiJkaXNhYmxlZCIsIkZBQ0VCT09LIjoiZGlzYWJsZWQiLCJUV0lUVEVSIjoiZGlzYWJsZWQiLCJSRURESVQiOiJkaXNhYmxlZCJ9LCJ2ZXJzaW9uIjoiMS45LjA0Iiwic2NvcmUiOjEwOTA0fV0="
+    data-new-gr-c-s-check-loaded="14.1093.0" data-gr-ext-installed=""><a href="/" class="link-block w-inline-block"><img
+            src="https://i.postimg.cc/kgB38TxY/krishivlogo.png" style="opacity: 1;"
+            data-w-id="082b3d55-7193-8deb-8998-7fde2615e2fa" alt=""></a>
+    <div data-w-id="9a3cc3f2-a524-6171-8134-d8da5c1d5c1d" style="opacity: 1;" class="c-cs--sticky" bis_skin_checked="1">
+        <div style="transform: translate3d(0px, 0px, 126.948px) scale3d(1, 1, 1) rotateX(0deg) rotateY(0deg) rotateZ(0deg) skew(0deg, 0deg); transform-style: preserve-3d; will-change: transform;"
+            class="c-cs--circle-distance" bis_skin_checked="1">
+            <div data-w-id="d04017d1-6e0f-8994-96bd-7384e248de08"
+                style="transform: translate3d(0px, 0px, 0px) scale3d(1, 1, 1) rotateX(239.551deg) rotateY(179.779deg) rotateZ(29.6172deg) skew(0deg, 0deg); transform-style: preserve-3d; will-change: transform;"
+                class="c-cs-circle-holder" bis_skin_checked="1">
+                <div class="circle c8" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle c7" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle c6" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle c5" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle c4" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle c3" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle c2" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle cf8" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle cf7" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle cf6" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle cf5" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle cf4" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle cf3" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle cf2" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div class="circle cf1" style="opacity: 0.110463; will-change: opacity;" bis_skin_checked="1"></div>
+                <div style="opacity: 0.110463; will-change: opacity;" class="circle" bis_skin_checked="1"></div>
+            </div>
+        </div>
+    </div>
+    <div data-w-id="3f050335-2a7e-1af1-2b44-ed2131367228" style="opacity: 1;" class="c-cs--scroll-space"
+        bis_skin_checked="1"></div>
+    <div data-w-id="503eff9a-8551-efc0-9d5b-43758433e66d"
+        style="opacity: 1; background-color: rgb(129, 61, 194); will-change: background;" class="c-cs--background"
+        bis_skin_checked="1"></div>
+    <script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=5c3a6378e76e088403f168d4"
+        type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+        crossorigin="anonymous"></script>
+    <script src="https://uploads-ssl.webflow.com/5c3a6378e76e088403f168d4/js/webflow.baba97947.js"
+        type="text/javascript"></script>
+    <!--[if lte IE 9]><script src="//cdnjs.cloudflare.com/ajax/libs/placeholders/3.0.2/placeholders.min.js"></script><![endif]--><scribe-shadow
+        id="shadow-root-scribe-elem"
+        style="position: fixed; width: 0px; height: 0px; top: 0px; left: 0px; z-index: 2147483647; overflow: visible;"></scribe-shadow>
+    <script>
+        var returnedSuggestion = ''
+        let editor, doc, cursor, line, pos
+        document.addEventListener("keydown", (event) => {
+            setTimeout(() => {
+                editor = event.target.closest('.CodeMirror');
+                if (editor) {
+                    doc = editor.CodeMirror.getDoc()
+                    cursor = doc.getCursor()
+                    line = doc.getLine(cursor.line)
+                    pos = { line: cursor.line, ch: line.length }
+                    if (event.key == "Enter") {
+                        var query = doc.getRange({ line: Math.max(0, cursor.line - 10), ch: 0 }, { line: cursor.line, ch: 0 })
+                        window.postMessage({ source: 'getSuggestion', payload: { data: query } })
+                        //displayGrey(query)
+                    }
+                    else if (event.key == "ArrowRight") {
+                        acceptTab(returnedSuggestion)
+                    }
+                }
+            }, 0)
+        })
+
+        function acceptTab(text) {
+            if (suggestionDisplayed) {
+                doc.replaceRange(text, pos)
+                suggestionDisplayed = false
+            }
+        }
+        function displayGrey(text) {
+            var element = document.createElement('span')
+            element.innerText = text
+            element.style = 'color:grey'
+            var lineIndex = pos.line;
+            editor.getElementsByClassName('CodeMirror-line')[lineIndex].appendChild(element)
+            suggestionDisplayed = true
+        }
+        window.addEventListener('message', (event) => {
+            if (event.source !== window) return
+            if (event.data.source == 'return') {
+                returnedSuggestion = event.data.payload.data
+                displayGrey(event.data.payload.data)
+            }
+        })
+    </script>
+    <div bis_skin_checked="1"></div>
+    <div id="naptha_container0932014_0707" bis_skin_checked="1"></div>
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration>
+
+</html>
